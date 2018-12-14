@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "express": "^4.16.4",
+    "jsonwebtoken": "^8.4.0",
     "mobx": "^5.7.0",
     "mobx-react": "^5.4.2",
     "react": "^16.6.3",

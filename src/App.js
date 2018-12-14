@@ -15,7 +15,7 @@ class App extends Component {
     return (
       <div className="App">
         <header className="App-header">
-        <JSONPretty json={this.props.store.jsondata}/>
+          <JSONPretty json={this.props.store.jsondata}/>
         </header>
         
       </div>
