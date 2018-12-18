@@ -11,6 +11,31 @@ const uuid4 = require("uuid/v4");
 const Sequelize = require("sequelize");
 const sequelize = new Sequelize(settings.sqlConnection);
 
+const {
+  loginUser,
+  createUser,
+  userExists
+} = require("../../controllers/accountController");
+
+const {
+  getUserClients
+} = require("../../controllers/userClients/userClientsController");
+
+const { ensureToken } = require("../../middleware/tokenVerify");
+
+//Login users
+router.post("/login", async (req, res) => {
+  try {
+    let user = await loginUser(req.body.username, req.body.password);
+    const token = jwt.sign({ user }, "my_secret_key");
+    res.json({
+      token: token
+    });
+  } catch (err) {
+    res.status(404).json({ error: err.error });
+  }
+});
+
 //Signup users
 router.post("/register", async (req, res) => {
   console.log(req.body);
@@ -25,60 +50,15 @@ router.post("/register", async (req, res) => {
   }
 });
 
-function createUser(account) {
-  return new Promise((resolve, reject) => {
-    let hashedPass;
-    bcrypt.hash(account.password, saltRounds).then(hash => {
-      sequelize
-        .authenticate()
-        .then(() => {
-          sequelize
-            .query(
-              `insert into accounts (Username,Password,Email,regCode) values ('${
-                account.username
-              }','${hash}','${account.email}','${uuid4()}')`,
-              { type: sequelize.QueryTypes.INSERT }
-            )
-            .then(result => {
-              if (result) {
-                resolve({ msg: "user created" });
-              } else {
-                reject({ msg: "failed to create user" });
-              }
-            });
-        })
-        .catch(err => {
-          console.log(err);
-          reject(err);
-        });
+router.get("/customers", ensureToken, async (req, res) => {
+  try {
+    let customers = await getUserClients(req.user.id);
+    res.json({
+      customers: customers
     });
-  });
-}
-
-function userExists(username) {
-  return new Promise((resolve, reject) => {
-    sequelize
-      .authenticate()
-      .then(() => {
-        sequelize
-          .query(`select * from accounts where Username = '${username}'`, {
-            type: sequelize.QueryTypes.SELECT
-          })
-          .then(users => {
-            if (users.length > 0) {
-              reject({ msg: "user already exists" });
-            }
-            // console.log(users);
-            else {
-              resolve(true);
-            }
-          });
-      })
-      .catch(err => {
-        console.log("Error :" + err);
-        reject(err);
-      });
-  });
-}
+  } catch (err) {
+    res.status(500).json({ err: err });
+  }
+});
 
 module.exports = router;
