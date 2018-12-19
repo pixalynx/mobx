@@ -13,6 +13,7 @@ const settings_1 = require("../settings");
 const sequelize = new Sequelize(settings_1.default.sqlConnection);
 const uuid4 = require("uuid/v4");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 const saltRounds = 10;
 function loginUser(user) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -104,4 +105,24 @@ function userExists(user) {
     });
 }
 exports.userExists = userExists;
+function verifyUser(token) {
+    return new Promise((resolve, reject) => {
+        let verify = jwt.verify(token, settings_1.default.jwtSecret);
+        sequelize.authenticate().then(() => {
+            sequelize
+                .query(`select * from accounts where id = ${verify.id}`, {
+                type: sequelize.QueryTypes.SELECT
+            })
+                .then(user => {
+                if (user.length > 0) {
+                    resolve(user[0]);
+                }
+            })
+                .catch(err => {
+                reject(err);
+            });
+        });
+    });
+}
+exports.verifyUser = verifyUser;
 //# sourceMappingURL=accountFunctions.js.map

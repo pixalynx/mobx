@@ -5,16 +5,9 @@ import uuid4 = require("uuid/v4");
 import bcrypt = require("bcrypt");
 import { resolve } from "path";
 import { reject } from "q";
+import { BaseUser } from "../models/userModel";
+import jwt = require("jsonwebtoken");
 const saltRounds: number = 10;
-
-export interface BaseUser {
-  id?: number;
-  Username?: string;
-  Password?: string;
-  Email?: string;
-  regCode?: string;
-  Verfied?: boolean;
-}
 
 export async function loginUser(user: BaseUser) {
   return new Promise<BaseUser>((resolve, reject) => {
@@ -104,5 +97,25 @@ export async function userExists(user: BaseUser) {
         console.log("Error :" + err);
         reject(err);
       });
+  });
+}
+
+export function verifyUser(token: string) {
+  return new Promise<BaseUser>((resolve, reject) => {
+    let verify = <BaseUser>jwt.verify(token, settings.jwtSecret);
+    sequelize.authenticate().then(() => {
+      sequelize
+        .query(`select * from accounts where id = ${verify.id}`, {
+          type: sequelize.QueryTypes.SELECT
+        })
+        .then(user => {
+          if (user.length > 0) {
+            resolve(user[0]);
+          }
+        })
+        .catch(err => {
+          reject(err);
+        });
+    });
   });
 }
